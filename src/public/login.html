@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autentificare — Reprogramări DIMTCCA</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="screen">
+    <div class="card login-card">
+      <h1>Reprogramări</h1>
+      <p class="subtitle">Panou administrare</p>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="username" autofocus>
+        <label for="password" class="field-spaced">Parolă</label>
+        <input type="password" id="password" required autocomplete="current-password">
+        <button type="submit">Intră</button>
+      </form>
+      <p id="login-error" class="error hidden"></p>
+    </div>
+  </div>
+  <script src="/login.js"></script>
+</body>
+</html>

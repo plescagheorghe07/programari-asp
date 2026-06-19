@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reprogramări DIMTCCA</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app-screen" class="screen">
+    <header>
+      <div>
+        <h1>Reprogramări automate</h1>
+        <p class="subtitle">eservicii.gov.md — examen practic/teoretic</p>
+      </div>
+      <button id="logout-btn" class="btn-secondary">Deconectare</button>
+    </header>
+    <p id="user-email" class="subtitle" style="padding: 0 2rem; margin-top: -0.5rem;"></p>
+
+    <section class="card add-form">
+      <h2>Adaugă programare</h2>
+      <form id="add-form">
+        <div class="form-row">
+          <div class="field grow">
+            <label for="url">Link cerere</label>
+            <input type="url" id="url" placeholder="https://eservicii.gov.md/asp/dimtcca/cerere/APO01/..." required>
+          </div>
+          <div class="field">
+            <label for="min-days">Zile minime</label>
+            <input type="number" id="min-days" value="14" min="0" max="365">
+          </div>
+          <div class="field actions">
+            <label>&nbsp;</label>
+            <button type="submit">Adaugă</button>
+          </div>
+        </div>
+      </form>
+      <p id="add-error" class="error hidden"></p>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="card">
+      <div class="table-header">
+        <h2>Programări</h2>
+        <button id="refresh-btn" class="btn-secondary">Reîmprospătează</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Persoană</th>
+              <th>Nr. cerere</th>
+              <th>Locație</th>
+              <th>Zile min.</th>
+              <th>Status</th>
+              <th>Plătită</th>
+              <th>Activă</th>
+              <th>Programat</th>
+              <th>Ultima verificare</th>
+              <th>Creat</th>
+              <th>Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="appointments-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="logs-modal" class="modal hidden">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h2>Jurnal activitate</h2>
+          <button id="close-logs" class="btn-secondary">Închide</button>
+        </div>
+        <div id="logs-list" class="logs-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
