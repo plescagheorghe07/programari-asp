@@ -51,6 +51,14 @@ db.exec(`
   );
 `);
 
+const columns = db.prepare('PRAGMA table_info(appointments)').all().map((c) => c.name);
+if (!columns.includes('min_date')) {
+  db.exec('ALTER TABLE appointments ADD COLUMN min_date TEXT');
+}
+if (!columns.includes('max_date')) {
+  db.exec('ALTER TABLE appointments ADD COLUMN max_date TEXT');
+}
+
 const stmts = {
   getAll: db.prepare(`
     SELECT * FROM appointments ORDER BY created_at DESC
@@ -62,8 +70,8 @@ const stmts = {
   insert: db.prepare(`
     INSERT INTO appointments (
       url, request_type, request_id, person_name, request_number,
-      location_name, min_days_diff, request_data
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      location_name, min_days_diff, min_date, max_date, request_data
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateAfterFetch: db.prepare(`
     UPDATE appointments SET
@@ -93,6 +101,11 @@ const stmts = {
   `),
   updateMinDays: db.prepare(`
     UPDATE appointments SET min_days_diff = ?, updated_at = datetime('now') WHERE id = ?
+  `),
+  updateDateRange: db.prepare(`
+    UPDATE appointments SET
+      min_date = ?, max_date = ?, updated_at = datetime('now')
+    WHERE id = ?
   `),
   delete: db.prepare('DELETE FROM appointments WHERE id = ?'),
   insertLog: db.prepare(`
@@ -155,6 +168,8 @@ function createAppointment(data) {
     data.requestNumber || null,
     data.locationName || null,
     data.minDaysDiff ?? 14,
+    data.minDate || null,
+    data.maxDate || null,
     data.requestData ? JSON.stringify(data.requestData) : null
   );
   return result.lastInsertRowid;
@@ -190,6 +205,10 @@ function setMinDays(id, days) {
   stmts.updateMinDays.run(days, id);
 }
 
+function setDateRange(id, minDate, maxDate) {
+  stmts.updateDateRange.run(minDate || null, maxDate || null, id);
+}
+
 function deleteAppointment(id) {
   stmts.delete.run(id);
 }
@@ -213,6 +232,7 @@ module.exports = {
   setPaid,
   setActive,
   setMinDays,
+  setDateRange,
   deleteAppointment,
   addLog,
   getLogs,

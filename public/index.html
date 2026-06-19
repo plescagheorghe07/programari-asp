@@ -26,8 +26,12 @@
             <input type="url" id="url" placeholder="https://eservicii.gov.md/asp/dimtcca/cerere/APO01/..." required>
           </div>
           <div class="field">
-            <label for="min-days">Zile minime</label>
-            <input type="number" id="min-days" value="14" min="0" max="365">
+            <label for="min-date">Data min.</label>
+            <input type="date" id="min-date" required>
+          </div>
+          <div class="field">
+            <label for="max-date">Data max.</label>
+            <input type="date" id="max-date">
           </div>
           <div class="field actions">
             <label>&nbsp;</label>
@@ -52,7 +56,8 @@
               <th>Persoană</th>
               <th>Nr. cerere</th>
               <th>Locație</th>
-              <th>Zile min.</th>
+              <th>Dată min.</th>
+              <th>Dată max.</th>
               <th>Status</th>
               <th>Plătită</th>
               <th>Activă</th>

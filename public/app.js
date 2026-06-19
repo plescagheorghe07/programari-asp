@@ -2,7 +2,6 @@ const TOKEN_KEY = 'dimtcca_token';
 
 let token = localStorage.getItem(TOKEN_KEY);
 
-const appScreen = document.getElementById('app-screen');
 const addForm = document.getElementById('add-form');
 const addError = document.getElementById('add-error');
 const appointmentsBody = document.getElementById('appointments-body');
@@ -10,6 +9,12 @@ const statsEl = document.getElementById('stats');
 const logsModal = document.getElementById('logs-modal');
 const logsList = document.getElementById('logs-list');
 const userEmailEl = document.getElementById('user-email');
+
+function defaultMinDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  return d.toISOString().slice(0, 10);
+}
 
 async function api(path, options = {}) {
   const res = await fetch(`/api${path}`, {
@@ -32,6 +37,7 @@ async function api(path, options = {}) {
 }
 
 async function init() {
+  document.getElementById('min-date').value = defaultMinDate();
   try {
     const me = await api('/me');
     userEmailEl.textContent = me.user.email;
@@ -56,13 +62,15 @@ addForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   addError.classList.add('hidden');
   const url = document.getElementById('url').value.trim();
-  const minDaysDiff = document.getElementById('min-days').value;
+  const minDate = document.getElementById('min-date').value;
+  const maxDate = document.getElementById('max-date').value;
   try {
     await api('/appointments', {
       method: 'POST',
-      body: JSON.stringify({ url, minDaysDiff }),
+      body: JSON.stringify({ url, minDate, maxDate: maxDate || null }),
     });
     document.getElementById('url').value = '';
+    document.getElementById('max-date').value = '';
     loadAppointments();
   } catch (err) {
     addError.textContent = err.message;
@@ -96,6 +104,11 @@ function formatDate(iso) {
   });
 }
 
+function formatDateOnly(value) {
+  if (!value) return '—';
+  return value;
+}
+
 async function loadAppointments() {
   try {
     const appointments = await api('/appointments');
@@ -122,7 +135,7 @@ function renderStats(appointments) {
 
 function renderTable(appointments) {
   if (!appointments.length) {
-    appointmentsBody.innerHTML = '<tr><td colspan="11" class="muted">Nicio programare adăugată.</td></tr>';
+    appointmentsBody.innerHTML = '<tr><td colspan="12" class="muted">Nicio programare adăugată.</td></tr>';
     return;
   }
 
@@ -132,7 +145,10 @@ function renderTable(appointments) {
       <td class="muted">${esc(a.requestNumber || '—')}</td>
       <td title="${esc(a.locationName || '')}">${esc(truncate(a.locationName, 30))}</td>
       <td>
-        <input type="number" class="min-days-input" data-id="${a.id}" value="${a.minDaysDiff}" min="0" max="365" style="width:60px">
+        <input type="date" class="min-date-input" data-id="${a.id}" value="${esc(a.minDate || '')}">
+      </td>
+      <td>
+        <input type="date" class="max-date-input" data-id="${a.id}" value="${esc(a.maxDate || '')}">
       </td>
       <td>${statusBadge(a)}</td>
       <td>
@@ -159,6 +175,16 @@ function renderTable(appointments) {
   `).join('');
 
   bindTableEvents();
+}
+
+async function saveDateRange(id) {
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  const minDate = row.querySelector('.min-date-input').value;
+  const maxDate = row.querySelector('.max-date-input').value;
+  await api(`/appointments/${id}/date-range`, {
+    method: 'PATCH',
+    body: JSON.stringify({ minDate, maxDate: maxDate || null }),
+  });
 }
 
 function bindTableEvents() {
@@ -188,15 +214,12 @@ function bindTableEvents() {
     });
   });
 
-  document.querySelectorAll('.min-days-input').forEach((el) => {
+  document.querySelectorAll('.min-date-input, .max-date-input').forEach((el) => {
     el.addEventListener('change', async () => {
       const id = el.dataset.id;
       try {
-        await api(`/appointments/${id}/min-days`, {
-          method: 'PATCH',
-          body: JSON.stringify({ minDaysDiff: el.value }),
-        });
-      } catch (err) { alert(err.message); }
+        await saveDateRange(id);
+      } catch (err) { alert(err.message); loadAppointments(); }
     });
   });
 

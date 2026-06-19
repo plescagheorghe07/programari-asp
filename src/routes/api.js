@@ -54,10 +54,32 @@ router.get('/appointments', (req, res) => {
   res.json(appointments);
 });
 
+function parseDate(value) {
+  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  return value;
+}
+
+function validateDateRange(minDate, maxDate, { requireMin = false } = {}) {
+  if (requireMin && !minDate) {
+    return { error: 'Data minimă obligatorie' };
+  }
+  if (!minDate && !maxDate) {
+    return { error: 'Data minimă sau maximă obligatorie' };
+  }
+  if (minDate && maxDate && minDate > maxDate) {
+    return { error: 'Data minimă nu poate fi după data maximă' };
+  }
+  return { minDate, maxDate };
+}
+
 router.post('/appointments', async (req, res) => {
   try {
-    const { url, minDaysDiff } = req.body;
+    const { url, minDate, maxDate } = req.body;
     if (!url) return res.status(400).json({ error: 'URL obligatoriu' });
+
+    const range = validateDateRange(parseDate(minDate), parseDate(maxDate), { requireMin: true });
+    if (range.error) return res.status(400).json({ error: range.error });
 
     const { requestType, requestId } = api.parseUrl(url);
     const requestData = await api.getRequest(requestType, requestId);
@@ -69,7 +91,8 @@ router.post('/appointments', async (req, res) => {
       personName: requestData.requestor?.fullName,
       requestNumber: requestData.requestNumber,
       locationName: requestData.serviceRequest?.examinationLocation?.name,
-      minDaysDiff: parseInt(minDaysDiff, 10) || 14,
+      minDate: range.minDate,
+      maxDate: range.maxDate,
       requestData,
     });
 
@@ -108,17 +131,15 @@ router.patch('/appointments/:id/active', (req, res) => {
   res.json({ ok: true, appointment: formatAppointment(db.getAppointmentById(id)) });
 });
 
-router.patch('/appointments/:id/min-days', (req, res) => {
+router.patch('/appointments/:id/date-range', (req, res) => {
   const id = parseInt(req.params.id, 10);
   const appointment = db.getAppointmentById(id);
   if (!appointment) return res.status(404).json({ error: 'Negăsit' });
 
-  const days = parseInt(req.body.minDaysDiff, 10);
-  if (isNaN(days) || days < 0) {
-    return res.status(400).json({ error: 'Zile minime invalide' });
-  }
+  const range = validateDateRange(parseDate(req.body.minDate), parseDate(req.body.maxDate));
+  if (range.error) return res.status(400).json({ error: range.error });
 
-  db.setMinDays(id, days);
+  db.setDateRange(id, range.minDate, range.maxDate);
   res.json({ ok: true, appointment: formatAppointment(db.getAppointmentById(id)) });
 });
 
@@ -162,6 +183,8 @@ function formatAppointment(row) {
     personName: row.person_name,
     requestNumber: row.request_number,
     locationName: row.location_name,
+    minDate: row.min_date,
+    maxDate: row.max_date,
     minDaysDiff: row.min_days_diff,
     isDone: !!row.is_done,
     isPaid: !!row.is_paid,

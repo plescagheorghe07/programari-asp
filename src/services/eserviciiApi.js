@@ -105,14 +105,19 @@ async function confirmAppointment(payload, referer) {
 function filterDatesByMinDays(dates, minDaysDiff) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + minDaysDiff);
+  const min = new Date(today);
+  min.setDate(min.getDate() + minDaysDiff);
+  const minStr = min.toISOString().slice(0, 10);
+  return filterDatesByRange(dates, minStr, null);
+}
 
+function filterDatesByRange(dates, minDate, maxDate) {
   return dates
     .filter((d) => {
       if (!d.timeSlots || d.timeSlots <= 0) return false;
-      const slotDate = new Date(d.date + 'T00:00:00');
-      return slotDate >= minDate;
+      if (minDate && d.date < minDate) return false;
+      if (maxDate && d.date > maxDate) return false;
+      return true;
     })
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -126,4 +131,5 @@ module.exports = {
   validateAppointment,
   confirmAppointment,
   filterDatesByMinDays,
+  filterDatesByRange,
 };

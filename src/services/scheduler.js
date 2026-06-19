@@ -3,9 +3,28 @@ const api = require('./eserviciiApi');
 
 let isRunning = false;
 
+function resolveDateRange(appointment) {
+  if (appointment.min_date || appointment.max_date) {
+    return {
+      minDate: appointment.min_date || null,
+      maxDate: appointment.max_date || null,
+      label: `${appointment.min_date || '—'} … ${appointment.max_date || '—'}`,
+    };
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const min = new Date(today);
+  min.setDate(min.getDate() + (appointment.min_days_diff || 14));
+  return {
+    minDate: min.toISOString().slice(0, 10),
+    maxDate: null,
+    label: `min ${appointment.min_days_diff || 14} zile`,
+  };
+}
+
 async function processAppointment(appointment) {
   const referer = appointment.url;
-  const minDays = appointment.min_days_diff;
+  const { minDate, maxDate, label } = resolveDateRange(appointment);
 
   let requestData;
   try {
@@ -56,14 +75,14 @@ async function processAppointment(appointment) {
     return;
   }
 
-  const eligibleDates = api.filterDatesByMinDays(dates, minDays);
+  const eligibleDates = api.filterDatesByRange(dates, minDate, maxDate);
 
   if (eligibleDates.length === 0) {
     db.updateCheck(appointment.id, 'waiting', null);
     db.addLog(
       appointment.id,
       'info',
-      `Nicio dată eligibilă (min ${minDays} zile). ${dates.length} date totale găsite.`
+      `Nicio dată eligibilă (${label}). ${dates.length} date totale găsite.`
     );
     return;
   }
