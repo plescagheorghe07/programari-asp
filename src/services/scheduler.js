@@ -47,13 +47,13 @@ async function processAppointment(appointment) {
   });
 
   if (requestData.hasAppointment) {
-    db.markDone(
+    const extDate = requestData.serviceRequest?.examinationDate;
+    const extTime = requestData.serviceRequest?.examinationTime?.time;
+    db.addLog(
       appointment.id,
-      requestData.serviceRequest?.examinationDate,
-      requestData.serviceRequest?.examinationTime?.time
+      'info',
+      `Programare existentă pe eservicii (${extDate || '?'} ${extTime || ''}) — continuăm până reprogramăm noi.`
     );
-    db.addLog(appointment.id, 'success', 'Cererea are deja o programare activă.');
-    return;
   }
 
   const publicServiceId = requestData.serviceRequest?.publicServiceId;

@@ -58,6 +58,9 @@ if (!columns.includes('min_date')) {
 if (!columns.includes('max_date')) {
   db.exec('ALTER TABLE appointments ADD COLUMN max_date TEXT');
 }
+if (!columns.includes('is_finished')) {
+  db.exec('ALTER TABLE appointments ADD COLUMN is_finished INTEGER NOT NULL DEFAULT 0');
+}
 
 const stmts = {
   getAll: db.prepare(`
@@ -65,7 +68,7 @@ const stmts = {
   `),
   getById: db.prepare('SELECT * FROM appointments WHERE id = ?'),
   getActive: db.prepare(`
-    SELECT * FROM appointments WHERE is_done = 0 AND is_active = 1
+    SELECT * FROM appointments WHERE is_finished = 0 AND is_active = 1
   `),
   insert: db.prepare(`
     INSERT INTO appointments (
@@ -81,7 +84,7 @@ const stmts = {
   `),
   markDone: db.prepare(`
     UPDATE appointments SET
-      is_done = 1, booked_date = ?, booked_time = ?,
+      is_done = 1, is_finished = 1, booked_date = ?, booked_time = ?,
       last_status = 'booked', last_error = NULL,
       updated_at = datetime('now')
     WHERE id = ?
@@ -105,6 +108,11 @@ const stmts = {
   updateDateRange: db.prepare(`
     UPDATE appointments SET
       min_date = ?, max_date = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `),
+  updateFinished: db.prepare(`
+    UPDATE appointments SET
+      is_finished = ?, is_done = ?, updated_at = datetime('now')
     WHERE id = ?
   `),
   delete: db.prepare('DELETE FROM appointments WHERE id = ?'),
@@ -209,6 +217,11 @@ function setDateRange(id, minDate, maxDate) {
   stmts.updateDateRange.run(minDate || null, maxDate || null, id);
 }
 
+function setFinished(id, isFinished) {
+  const val = isFinished ? 1 : 0;
+  stmts.updateFinished.run(val, val, id);
+}
+
 function deleteAppointment(id) {
   stmts.delete.run(id);
 }
@@ -233,6 +246,7 @@ module.exports = {
   setActive,
   setMinDays,
   setDateRange,
+  setFinished,
   deleteAppointment,
   addLog,
   getLogs,

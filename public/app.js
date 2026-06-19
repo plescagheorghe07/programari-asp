@@ -79,7 +79,7 @@ addForm.addEventListener('submit', async (e) => {
 });
 
 function statusBadge(a) {
-  if (a.isDone) return '<span class="badge badge-done">Finalizat</span>';
+  if (a.isFinished) return '<span class="badge badge-done">Finalizat</span>';
   const map = {
     waiting: 'badge-waiting',
     error: 'badge-error',
@@ -121,8 +121,8 @@ async function loadAppointments() {
 
 function renderStats(appointments) {
   const total = appointments.length;
-  const done = appointments.filter((a) => a.isDone).length;
-  const active = appointments.filter((a) => !a.isDone && a.isActive).length;
+  const done = appointments.filter((a) => a.isFinished).length;
+  const active = appointments.filter((a) => !a.isFinished && a.isActive).length;
   const paid = appointments.filter((a) => a.isPaid).length;
 
   statsEl.innerHTML = `
@@ -135,7 +135,7 @@ function renderStats(appointments) {
 
 function renderTable(appointments) {
   if (!appointments.length) {
-    appointmentsBody.innerHTML = '<tr><td colspan="12" class="muted">Nicio programare adăugată.</td></tr>';
+    appointmentsBody.innerHTML = '<tr><td colspan="13" class="muted">Nicio programare adăugată.</td></tr>';
     return;
   }
 
@@ -153,13 +153,19 @@ function renderTable(appointments) {
       <td>${statusBadge(a)}</td>
       <td>
         <label class="switch">
+          <input type="checkbox" class="finished-toggle" data-id="${a.id}" ${a.isFinished ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>
+        <label class="switch">
           <input type="checkbox" class="paid-toggle" data-id="${a.id}" ${a.isPaid ? 'checked' : ''}>
           <span class="slider"></span>
         </label>
       </td>
       <td>
         <label class="switch">
-          <input type="checkbox" class="active-toggle" data-id="${a.id}" ${a.isActive ? 'checked' : ''} ${a.isDone ? 'disabled' : ''}>
+          <input type="checkbox" class="active-toggle" data-id="${a.id}" ${a.isActive ? 'checked' : ''} ${a.isFinished ? 'disabled' : ''}>
           <span class="slider"></span>
         </label>
       </td>
@@ -167,7 +173,7 @@ function renderTable(appointments) {
       <td class="muted">${formatDate(a.lastCheckAt)}</td>
       <td class="muted">${formatDate(a.createdAt)}</td>
       <td class="actions-cell">
-        <button class="btn-secondary btn-small run-btn" data-id="${a.id}" ${a.isDone ? 'disabled' : ''}>Rulează</button>
+        <button class="btn-secondary btn-small run-btn" data-id="${a.id}" ${a.isFinished ? 'disabled' : ''}>Rulează</button>
         <button class="btn-secondary btn-small logs-btn" data-id="${a.id}">Jurnal</button>
         <button class="btn-danger btn-small delete-btn" data-id="${a.id}">Șterge</button>
       </td>
@@ -188,6 +194,19 @@ async function saveDateRange(id) {
 }
 
 function bindTableEvents() {
+  document.querySelectorAll('.finished-toggle').forEach((el) => {
+    el.addEventListener('change', async () => {
+      const id = el.dataset.id;
+      try {
+        await api(`/appointments/${id}/finished`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isFinished: el.checked }),
+        });
+        loadAppointments();
+      } catch (err) { alert(err.message); el.checked = !el.checked; }
+    });
+  });
+
   document.querySelectorAll('.paid-toggle').forEach((el) => {
     el.addEventListener('change', async () => {
       const id = el.dataset.id;

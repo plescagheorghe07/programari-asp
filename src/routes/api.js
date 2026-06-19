@@ -99,12 +99,13 @@ router.post('/appointments', async (req, res) => {
     db.addLog(id, 'info', 'Programare adăugată în sistem.');
 
     if (requestData.hasAppointment) {
-      db.markDone(
+      const extDate = requestData.serviceRequest?.examinationDate;
+      const extTime = requestData.serviceRequest?.examinationTime?.time;
+      db.addLog(
         id,
-        requestData.serviceRequest?.examinationDate,
-        requestData.serviceRequest?.examinationTime?.time
+        'info',
+        `Programare existentă pe eservicii (${extDate || '?'} ${extTime || ''}) — nu e marcată finalizată.`
       );
-      db.addLog(id, 'success', 'Cererea are deja programare.');
     }
 
     res.json({ ok: true, id, appointment: formatAppointment(db.getAppointmentById(id)) });
@@ -140,6 +141,15 @@ router.patch('/appointments/:id/date-range', (req, res) => {
   if (range.error) return res.status(400).json({ error: range.error });
 
   db.setDateRange(id, range.minDate, range.maxDate);
+  res.json({ ok: true, appointment: formatAppointment(db.getAppointmentById(id)) });
+});
+
+router.patch('/appointments/:id/finished', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const appointment = db.getAppointmentById(id);
+  if (!appointment) return res.status(404).json({ error: 'Negăsit' });
+
+  db.setFinished(id, !!req.body.isFinished);
   res.json({ ok: true, appointment: formatAppointment(db.getAppointmentById(id)) });
 });
 
@@ -187,6 +197,7 @@ function formatAppointment(row) {
     maxDate: row.max_date,
     minDaysDiff: row.min_days_diff,
     isDone: !!row.is_done,
+    isFinished: !!row.is_finished,
     isPaid: !!row.is_paid,
     isActive: !!row.is_active,
     bookedDate: row.booked_date,
