@@ -1,23 +1,50 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const db = require('../db');
 const api = require('../services/eserviciiApi');
 const { processAppointment } = require('../services/scheduler');
+const { signToken, requireAuth } = require('../auth');
 
 const router = express.Router();
 
-function requireAuth(req, res, next) {
-  const auth = req.headers.authorization;
-  const password = process.env.ADMIN_PASSWORD || 'admin';
-  if (auth === `Bearer ${password}`) return next();
-  res.status(401).json({ error: 'Neautorizat' });
-}
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Prea multe încercări. Încearcă din nou în 15 minute.' },
+});
 
-router.post('/login', (req, res) => {
-  const { password } = req.body;
-  if (password === (process.env.ADMIN_PASSWORD || 'admin')) {
-    return res.json({ ok: true, token: password });
+router.post('/login', loginLimiter, (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email și parolă obligatorii' });
   }
-  res.status(401).json({ error: 'Parolă incorectă' });
+
+  const user = db.verifyUserPassword(email.trim().toLowerCase(), password);
+  if (!user) {
+    return res.status(401).json({ error: 'Email sau parolă incorectă' });
+  }
+
+  const token = signToken(user);
+
+  res.cookie('auth_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.json({ ok: true, token, user: { email: user.email } });
+});
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.json({ ok: true });
+});
+
+router.get('/me', requireAuth, (req, res) => {
+  res.json({ ok: true, user: req.user });
 });
 
 router.use(requireAuth);

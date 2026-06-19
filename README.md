@@ -17,20 +17,27 @@ Aplicație Node.js cu panou admin pentru reprogramări automate la examen pe [es
 ```bash
 npm install
 cp .env.example .env
-# Editează .env — setează ADMIN_PASSWORD și opțional COOKIE
+# Setează SESSION_SECRET (minim 32 caractere): openssl rand -hex 32
 npm start
 ```
 
-Deschide http://localhost:3000
+Deschide http://localhost:3005/login
+
+**Utilizator implicit:** plescagheorghe07@gmail.com / georgie6699
 
 ## Configurare (.env)
 
 | Variabilă | Descriere |
 |-----------|-----------|
-| `PORT` | Port server (default 3000) |
-| `ADMIN_PASSWORD` | Parola panou admin |
+| `PORT` | Port server (default 3005, doar localhost) |
+| `SESSION_SECRET` | Secret JWT (minim 32 caractere) |
+| `NODE_ENV` | `production` pe server |
 | `POLL_INTERVAL_MINUTES` | Interval verificare automată (default 2) |
-| `COOKIE` | Cookie de sesiune eservicii.gov.md (opțional, copiat din browser) |
+| `COOKIE` | Cookie eservicii.gov.md din browser |
+
+## Deploy
+
+Vezi `deploy/README.md` pentru nginx (`programari.visio.md`) și systemd NixOS.
 
 ## Flux API
 

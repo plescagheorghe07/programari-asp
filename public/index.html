@@ -7,20 +7,7 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div id="login-screen" class="screen">
-    <div class="card login-card">
-      <h1>Reprogramări DIMTCCA</h1>
-      <p class="subtitle">Panou administrare</p>
-      <form id="login-form">
-        <label for="password">Parolă</label>
-        <input type="password" id="password" required autocomplete="current-password">
-        <button type="submit">Intră</button>
-      </form>
-      <p id="login-error" class="error hidden"></p>
-    </div>
-  </div>
-
-  <div id="app-screen" class="screen hidden">
+  <div id="app-screen" class="screen">
     <header>
       <div>
         <h1>Reprogramări automate</h1>
@@ -28,6 +15,7 @@
       </div>
       <button id="logout-btn" class="btn-secondary">Deconectare</button>
     </header>
+    <p id="user-email" class="subtitle" style="padding: 0 2rem; margin-top: -0.5rem;"></p>
 
     <section class="card add-form">
       <h2>Adaugă programare</h2>

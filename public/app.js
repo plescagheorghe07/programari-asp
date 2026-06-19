@@ -2,33 +2,19 @@ const TOKEN_KEY = 'dimtcca_token';
 
 let token = localStorage.getItem(TOKEN_KEY);
 
-const loginScreen = document.getElementById('login-screen');
 const appScreen = document.getElementById('app-screen');
-const loginForm = document.getElementById('login-form');
-const loginError = document.getElementById('login-error');
 const addForm = document.getElementById('add-form');
 const addError = document.getElementById('add-error');
 const appointmentsBody = document.getElementById('appointments-body');
 const statsEl = document.getElementById('stats');
 const logsModal = document.getElementById('logs-modal');
 const logsList = document.getElementById('logs-list');
-
-function showApp() {
-  loginScreen.classList.add('hidden');
-  appScreen.classList.remove('hidden');
-  loadAppointments();
-}
-
-function showLogin() {
-  token = null;
-  localStorage.removeItem(TOKEN_KEY);
-  appScreen.classList.add('hidden');
-  loginScreen.classList.remove('hidden');
-}
+const userEmailEl = document.getElementById('user-email');
 
 async function api(path, options = {}) {
   const res = await fetch(`/api${path}`, {
     ...options,
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
@@ -37,34 +23,32 @@ async function api(path, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) {
-    showLogin();
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.href = '/login';
     throw new Error('Sesiune expirată');
   }
   if (!res.ok) throw new Error(data.error || 'Eroare server');
   return data;
 }
 
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  loginError.classList.add('hidden');
-  const password = document.getElementById('password').value;
+async function init() {
   try {
-    const data = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    }).then((r) => r.json());
-    if (!data.ok) throw new Error(data.error);
-    token = data.token;
-    localStorage.setItem(TOKEN_KEY, token);
-    showApp();
-  } catch (err) {
-    loginError.textContent = err.message;
-    loginError.classList.remove('hidden');
+    const me = await api('/me');
+    userEmailEl.textContent = me.user.email;
+    loadAppointments();
+  } catch {
+    window.location.href = '/login';
   }
+}
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  try {
+    await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+  } catch { /* ignore */ }
+  localStorage.removeItem(TOKEN_KEY);
+  window.location.href = '/login';
 });
 
-document.getElementById('logout-btn').addEventListener('click', showLogin);
 document.getElementById('refresh-btn').addEventListener('click', loadAppointments);
 document.getElementById('close-logs').addEventListener('click', () => logsModal.classList.add('hidden'));
 
@@ -275,8 +259,5 @@ function truncate(str, len) {
   return str.length > len ? str.slice(0, len) + '…' : str;
 }
 
-if (token) {
-  showApp();
-}
-
+init();
 setInterval(loadAppointments, 30000);

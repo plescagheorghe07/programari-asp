@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autentificare — Reprogramări DIMTCCA</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="screen">
+    <div class="card login-card">
+      <h1>Reprogramări DIMTCCA</h1>
+      <p class="subtitle">Panou administrare</p>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="username" autofocus>
+        <label for="password" style="margin-top: 1rem;">Parolă</label>
+        <input type="password" id="password" required autocomplete="current-password">
+        <button type="submit">Intră</button>
+      </form>
+      <p id="login-error" class="error hidden"></p>
+    </div>
+  </div>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('login-error');
+      errEl.classList.add('hidden');
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Eroare autentificare');
+        localStorage.setItem('dimtcca_token', data.token);
+        window.location.href = '/';
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 
@@ -40,6 +41,13 @@ db.exec(`
     message TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
 
@@ -93,7 +101,38 @@ const stmts = {
   getLogs: db.prepare(`
     SELECT * FROM logs WHERE appointment_id = ? ORDER BY created_at DESC LIMIT ?
   `),
+  countUsers: db.prepare('SELECT COUNT(*) AS count FROM users'),
+  getUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
+  getUserById: db.prepare('SELECT id, email, created_at FROM users WHERE id = ?'),
+  insertUser: db.prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)'),
 };
+
+function seedDefaultUser() {
+  const { count } = stmts.countUsers.get();
+  if (count > 0) return;
+
+  const email = 'plescagheorghe07@gmail.com';
+  const passwordHash = bcrypt.hashSync('georgie6699', 12);
+  stmts.insertUser.run(email, passwordHash);
+  console.log(`Utilizator implicit creat: ${email}`);
+}
+
+function getUserByEmail(email) {
+  return stmts.getUserByEmail.get(email);
+}
+
+function getUserById(id) {
+  return stmts.getUserById.get(id);
+}
+
+function verifyUserPassword(email, password) {
+  const user = getUserByEmail(email);
+  if (!user) return null;
+  if (!bcrypt.compareSync(password, user.password_hash)) return null;
+  return { id: user.id, email: user.email };
+}
+
+seedDefaultUser();
 
 function getAllAppointments() {
   return stmts.getAll.all();
@@ -177,4 +216,7 @@ module.exports = {
   deleteAppointment,
   addLog,
   getLogs,
+  getUserByEmail,
+  getUserById,
+  verifyUserPassword,
 };
