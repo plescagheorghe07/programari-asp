@@ -1,0 +1,19 @@
+{
+  "name": "reprogramari-dimtcca",
+  "version": "1.0.0",
+  "description": "Reprogramări automate examen DIMTCCA - eservicii.gov.md",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "node-cron": "^4.1.0"
+  }
+}

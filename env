@@ -1,0 +1,4 @@
+PORT=3000
+ADMIN_PASSWORD=schimba_parola_aici
+POLL_INTERVAL_MINUTES=2
+COOKIE=current-context=%7B%22ContextId%22%3A%22%22%2C%22IsSelected%22%3Afalse%7D
