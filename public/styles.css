@@ -123,6 +123,7 @@ button:hover { background: var(--primary-hover); }
 .field.grow { flex: 1; min-width: 280px; }
 
 #login-form { margin-top: 1.5rem; }
+.field-spaced { margin-top: 1rem; }
 #login-form button { width: 100%; margin-top: 1rem; }
 
 .error {
